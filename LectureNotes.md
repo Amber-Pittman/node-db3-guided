@@ -8,15 +8,15 @@
 
     B. [Aggregate functions](https://www.sqlite.org/lang_aggfunc.html) are just helper functions we can call directly in the SQL statement. You can use them to 
         
-        * count rows, 
+    * count rows, 
 
-        * perform calculations,
+    * perform calculations,
 
-        * basic arithmetic,
+    * basic arithmetic,
 
-        * get the average of numbers,
+    * get the average of numbers,
 
-        * generate random numbers, etc. 
+    * generate random numbers, etc. 
 
 
     C. _Scenario:_ We want the total quantity of all of the rows in OrderDetail (from the northwind.db3 file) for the product with the ID of 11. 
@@ -89,9 +89,11 @@
 
         * We have a table named authors. It has a column called ID and a column called name (for the author name).
 
+        ```
         id          name
         ____________________________
         1           Jane Doe
+        ```
 
         * If we want to associate blog posts with these authors in our database, we have a couple of different options. 
 
@@ -131,3 +133,20 @@
             ```
 
     * Foreign Keys do not need to be unique. Since their job is to literally point to another identifier in different table - rather than be the identifier itself. You can have multiple foreign keys in a table pointing to the same primary key. _It's the primary key that has to be unique._ Foreign keys just need to _match_ the primary key.
+
+    * Go back into the northwind.db3 file again. 
+
+        * Product Table 
+
+            * Look at the columns
+
+                * SupplierId is a foreign key pointing to the Supplier table
+
+                * CategoryId is a foreign key pointing to the Category table
+
+            * This is the _relational_ part of our database.
+
+                * This is how rows can be related to other rows - by having foreign keys point to each other. 
+
+3. How to Query Multiple Tables at the Same Time
+
