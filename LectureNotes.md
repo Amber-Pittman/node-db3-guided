@@ -150,3 +150,72 @@
 
 3. How to Query Multiple Tables at the Same Time
 
+    We want SQL to read through the foreign key to get the values from the other tables during the query. 
+
+    A. Example: 
+
+    * Let's select everything from the OrderDetails table. 
+
+    * Limit to 1 result for now. 
+
+    ```
+    SELECT * FROM "OrderDetail" LIMIT 1;
+    ```
+    
+    B. _Scenario:_ Let's say we want to get the product details. In the results, we can't tell what that product is. It's only showing an id. 
+
+    * Luckily, with SQL, it comes with these things called joins. Join is a SQL command that we can use to query multiple tables in one statement. They combine results into one singular result. 
+
+    * Separate Select and Limit onto different lines then add in JOIN. 
+
+    * We want to join the product table. Right now, we essentially have 2 tables that our query is looking at! We can now use those 2 tables to look at different pieces of data. 
+
+    ```
+    SELECT * FROM "OrderDetail" 
+    JOIN "Product"
+    LIMIT 1;
+    ```
+
+    * With Join statements, they should always go hand in hand with a condition. In this situation, we want to look for every row that has the OrderDetail table and the ProductId column. They should be equal to the Product table and the Id column. 
+
+    ```
+    SELECT * FROM "OrderDetail" 
+    JOIN "Product" ON "OrderDetail"."ProductId" = "Product"."Id"
+    LIMIT 1;
+    ```
+
+    * What the code above is saying is "Select everything from the OrderDetail table. Then for each resulting row, find the row and the product table where the Id matches the row we have in our foreign key. Find every row where this ON condition is true. Take that resulting data and stick it on the right side of our results, so that it looks like it's all coming from a single table."
+
+    * When you submit that command, notice that we can now see the product columns alongside the order columns. So we can now see the ProductId of 11 and the actual ProductName and all the other information associated with that product -- instead of just the id like before. 
+    
+    * If you take out the LIMIT 1, you get over 621K rows. It finds a matching product for every row in our results. 
+
+    * One thing to notice when we're combining tables into a single query, we are going to have some duplicated column names every once in a while (like the ID column name). It's because the query is combining both tables into one giant table. 
+
+        * We can fix that by changing our selector from all to specific columns instead. 
+
+        * Instead of selecting single column names like `"Id"`, we can now prefix it with the table name we actually want to select the column from. In this instance, we care about the OrderDetail id, not the product id.  
+
+        * Let's also select the OrderDetail quantity and the Product Name. 
+
+        ```
+        SELECT "OrderDetail"."Id", "OrderDetail"."Quantity", "Product"."ProductName" FROM "OrderDetail" 
+        JOIN "Product" ON "OrderDetail"."ProductId" = "Product"."Id"
+        ```
+
+        * This is much nicer and easier to read the information you need. Although you are still get 100s of 1000s of rows. 
+
+        * The code itself needs a bit of a cleanup. We'll update it to include the **_aliases_**. Since we're reusing OrderDetail table name several times, we could an alias to shorten it up a bit.
+
+            * After FROM's "OrderDetail", we can change it to AS "o"
+
+            * We can also shorten Product to p in case we have several instances of it as well.
+
+        ```
+        SELECT o."Id", 0."Quantity", "Product"."ProductName" FROM "OrderDetail" AS o 
+        JOIN "Product" AS p ON o."ProductId" = p."Id" 
+        ```
+
+    C. _Scenario:_ In a single query, find the employee's first name and last name associated with order #16608. 
+
+    * 
