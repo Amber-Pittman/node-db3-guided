@@ -432,6 +432,8 @@ router.use("/:id/posts", postRouter)
 
     * Try running the request again. You will now see a list of posts for a specific user. Success!
 
+    * Add the mergeParams to your child router (`posts-router`) too before moving forward. 
+
 5. Add a join statement to our query to get our user name in our post router. Doing so will be helpful when someone requests the user name from our API. 
 
     * Put the Join before the where
@@ -498,4 +500,79 @@ router.use("/:id/posts", postRouter)
 
     * Run a GET request to a users posts. `GET http://localhost:4000/users/3/posts` will return what it did before, except now we get the username with the Id and Contents. Just as we wanted. 
 
-7. 
+7. As you've probably seen in our last couple of projects, a lot of the time, this code we just made is split out into its own file (a model file). Maybe we want to call this query in another endpoint. Instead of rewriting all of it for the next endpoint, we want to extract this into its own file to make it reusable. Remember, we want DRY code! 
+
+    * Create a model file in the posts folder. Name it `posts-model.js`.
+
+    * Inside this file, we're going to import the db config since we're using the database calls. 
+
+    * Write new function to find by user id.
+    
+    * Extract the query into its this function. 
+
+    * Instead of the const post, let's just return db as a single post statement.
+
+    * Since we're passing params into the function, we need to replace the `req.params.id` with userId. The userId is what we'll pass as the param of findByUserId.
+
+        * Why isn't the findByUserId an async function? Because in this case, we don't have to actually wait on anything. There isn't some code that comes after the db call. 
+
+            * When we import it into a router, that's when we await that result.
+
+    ```
+    const db = require("../data/config")
+
+    function findByUserId(userId) {
+        return db("posts as p")
+            .leftJoin("users as u", "u.id", "p.user_id")
+            .where("user_id", userId)
+            .select("p.id", "p.contents", "u.username")
+    }
+    ```
+
+    * Export an object and include the function. We do this because we may have more model functions in the future we may also want to export. 
+    
+    ```
+    const db = require("../data/config")
+
+    function findByUserId(userId) {
+        return db("posts as p")
+            .leftJoin("users as u", "u.id", "p.user_id")
+            .where("user_id", userId)
+            .select("p.id", "p.contents", "u.username")
+    }
+
+    module.exports = {
+        findByUserId,
+    }
+    ```
+
+    * Import the model file into your post-router. 
+
+    * In the post router's try statement, create a variable that awaits the post model file to find by the user id. It will take in the params of the id. 
+
+    ```
+    try {
+        const posts = await postModel.findByUserId(req.params.id)
+        res.json(posts)
+    }
+    ```
+
+    * Now, if we ever wanted to run that query again in some other endpoint, we could just call the model function (`postModel.findByUserId(req.params.id)`). It will already be there. 
+
+    If you wanted to shorten the code a little more, just pass in the await call into json. 
+
+    ```
+    try {
+        res.json(await postModel.findByUserId(req.params.id))
+    }
+    ```
+
+    * Run in Insomnia again to make sure everything still works. It should. Double check with a few different user id's just to be sure. 
+
+    
+### Final Questions
+
+**_Q.-** Is there a way to manually omit certain fields? **_A:_** There are ways in other DBMS's but not so sure about SQLite. This [question from Stack Overflow](https://stackoverflow.com/questions/729197/sql-exclude-a-column-using-select-except-columna-from-tablea) may be helpful here. What it might boil down to is you would create Views (kind of like storing your results more permanently in a permanent table). Views are when you want to save your result. [SQLite does support Views](https://www.tutorialspoint.com/sqlite/sqlite_views.htm).  
+    
+
+#### DONE!!!
