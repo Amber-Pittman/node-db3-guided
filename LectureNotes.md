@@ -368,4 +368,66 @@
         GET http://localhost:4000/users
         ```
 
-    * Open the `blog.db3` database file. !!!!! 1:19:59 !!!!!!!
+    * Open the `blog.db3` database file just so we can see what's in that database. 
+
+        * Users Table
+
+            * Id
+
+            * Username
+
+        * Posts Table
+
+            * Id
+
+            * Contents
+
+            * User Id - the foreign key
+        
+    * Create an endpoint that lists out all posts for a user. You will need to create a new file (`posts-router.js`) to separate it from the users router. 
+
+    ```
+    const express = require(express)
+    const db = require("../data/config")
+
+    const router = express.Router()
+    
+    router.get("/", async (req, res, next) => {
+        try {
+            const posts = await db("posts").where("user_id", req.params.id)
+            res.json(posts)
+        } catch(err) {
+            next(err)
+        }
+    })
+
+    module.exports = router
+    ```
+
+    * Instead of importing posts router into the index file, import it into the users router. It'll be a sub-router of a sub-router. Don't forget to use it in the file and attach the postRouter. 
+
+    ```
+    const express = require(express)
+    const postRouter = require("../posts/post-router")
+    const db = require("../data/config")
+
+    const router = express.Router()
+
+    router.use("/:id/posts", postRouter)
+    ```
+
+    * If you make your GET request now, you will get an error in the terminal. `ERROR: Undefined binding(s) detected when compiling SELECT`. Usually, this error just means that something you're passing into knex is undefined. In the `post-router` file, the where is probably undefined at `req.params.id`.
+
+        * When you define a parameter on a parent router (`users-router`), those values do not explictly get passed down to the children routers.
+
+        * To fix this, go into the parent router and give it an option to define it. You'll want to merge the params and set them to true. 
+
+        * You can read more about it on the [express.Router([options])](https://expressjs.com/en/api.html#express.router) section of Express Documentation.
+        
+        ```
+        const router = express.Router({
+            mergeParams: true,
+        })
+        ```
+
+        * Try running the request again. You will now see a list of posts for a specific user. 
