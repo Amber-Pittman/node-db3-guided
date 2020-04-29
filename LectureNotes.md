@@ -326,17 +326,17 @@
         
         * This is because the default JOIN in SQL is called an "Inner Join." If keys don't match on both sides of the join - the join condition (ON ...) was not met - then it doesn't show anything. Nothing gets returned. That's the rule with Inner Join.
 
-        * There are [different types of joins](http://www.sql-join.com/sql-join-types). What it comes down to is: what side of the join is allowed to be empty or null?
+    * There are [different types of joins](http://www.sql-join.com/sql-join-types). What it comes down to is: what side of the join is allowed to be empty or null?
+        
+        * The default one is called **Inner Join** if we don't specify a specific type of join. Results only get returned if both sides have something. 
+
+        * **Left Join** - Returns all the rows in the first table even if the right table does not have any matching rows. 
+
+        * SQLite Does Not Fully Support these:
             
-            * The default one is called **Inner Join** if we don't specify a specific type of join. Results only get returned if both sides have something. 
+            * **Right Join** - Opposite of Left Join.
 
-            * **Left Join** - Returns all the rows in the first table even if the right table does not have any matching rows. 
-
-            * SQLite Does Not Fully Support these:
-                
-                * **Right Join** - Opposite of Left Join.
-
-                * **Full Join** - allows either side to be missing. 
+            * **Full Join** - allows either side to be missing. 
 
     * We can specify the type by prefixing JOIN with the type. Since the default join doesn't return any results, let's specify Left Join. When you run it, the Employee Name columns are empty but you do see the order details. 
     
@@ -349,3 +349,230 @@
     LEFT JOIN "Employee" AS e ON e."Id" = o."EmployeeId"
     WHERE o."Id" = 16608;
     ```
+
+### Code Along!
+
+```
+Video at 1:18:30
+```
+
+1. Get the Project started. This is a simple API with users and posts.
+
+    * Install npm. 
+    
+    * Start the project with `npm run server`
+
+    * Open Insomnia. Make a test request to `/users`. It should return a list of 3 users. 
+
+        ```
+        GET http://localhost:4000/users
+        ```
+
+    * Open the `blog.db3` database file just so we can see what's in that database. 
+
+        * Users Table
+
+            * Id
+
+            * Username
+
+        * Posts Table
+
+            * Id
+
+            * Contents
+
+            * User Id - the foreign key
+        
+2. Create an endpoint that lists out all posts for a user. You will need to create a new file (`posts-router.js`) to separate it from the users router. 
+
+```
+const express = require(express)
+const db = require("../data/config")
+
+const router = express.Router()
+
+router.get("/", async (req, res, next) => {
+    try {
+        const posts = await db("posts").where("user_id", req.params.id)
+        res.json(posts)
+    } catch(err) {
+        next(err)
+    }
+})
+
+module.exports = router
+```
+
+3. Instead of importing posts router into the index file, import it into the users router. It'll be a sub-router of a sub-router. Don't forget to use it in the file and attach the postRouter. 
+
+```
+const express = require(express)
+const postRouter = require("../posts/post-router")
+const db = require("../data/config")
+
+const router = express.Router()
+
+router.use("/:id/posts", postRouter)
+```
+
+4. If you make your GET request now, you will get an error in the terminal. `ERROR: Undefined binding(s) detected when compiling SELECT`. Usually, this error just means that something you're passing into knex is undefined. In the `post-router` file, the where is probably undefined at `req.params.id`.
+
+    * When you define a parameter on a parent router (`users-router`), those values do not explictly get passed down to the children routers.
+
+    * To fix this, go into the parent router (`users-router`) and give it an option to define it. You'll want to merge the params and set them to true. 
+
+    * You can read more about it on the [express.Router([options])](https://expressjs.com/en/api.html#express.router) section of Express Documentation.
+    
+    ```
+    const router = express.Router({
+        mergeParams: true,
+    })
+    ```
+
+    * Try running the request again. You will now see a list of posts for a specific user. Success!
+
+    * Add the mergeParams to your child router (`posts-router`) too before moving forward. 
+
+5. Add a join statement to our query to get our user name in our post router. Doing so will be helpful when someone requests the user name from our API. 
+
+    * Put the Join before the where
+
+    * Use LEFT JOIN since we still want to see the post data even if there is not author id information.
+
+    * Join the table of "users" as the first param. 
+
+    * The second and the third params are just the sides of our condition. The users id is equal to the posts user_id.
+
+    ```
+    try {
+            const posts = await db("posts")
+                .leftJoin("users", "users.id", "posts.user_id")
+                .where("user_id", req.params.id)
+            res.json(posts)
+        }
+    ```
+
+    * If you wanted to give it an alias, you could. They are completely optional. Just handy with long statements.
+    
+    ```
+    try {
+            const posts = await db("posts as p")
+                .leftJoin("users as u", "u.id", "p.user_id")
+                .where("user_id", req.params.id)
+            res.json(posts)
+        }
+    ```
+
+6. The req.params.id is going to select every column. But we don't want every column. We want specific columns. You can select them after the WHERE. 
+
+    ```
+    try {
+            const posts = await db("posts as p")
+                .leftJoin("users as u", "u.id", "p.user_id")
+                .where("user_id", req.params.id)
+                .select("p.id", "p.contents", "u.username")
+            res.json(posts)
+        }
+    ```
+
+    * Under the hood this translates as
+    
+    ```
+    try {
+            const posts = await db("posts as p") 
+                                // FROM posts AS p
+                
+                .leftJoin("users as u", "u.id", "p.user_id")  
+                // LEFT JOIN users AS u ON u.id = p.user_id
+                
+                .where("user_id", req.params.id)
+                // WHERE user_id =?
+
+                .select("p.id", "p.contents", "u.username")
+                // SELECT p.id, p.contents, u.username
+
+            res.json(posts)
+        }
+    ```
+
+    * If our statement looks out of order, it is. It's okay in JavaScript, as the order doesn't matter so much. BUT, in SQL you do want to keep them in the proper order. 
+
+    * Run a GET request to a users posts. `GET http://localhost:4000/users/3/posts` will return what it did before, except now we get the username with the Id and Contents. Just as we wanted. 
+
+7. As you've probably seen in our last couple of projects, a lot of the time, this code we just made is split out into its own file (a model file). Maybe we want to call this query in another endpoint. Instead of rewriting all of it for the next endpoint, we want to extract this into its own file to make it reusable. Remember, we want DRY code! 
+
+    * Create a model file in the posts folder. Name it `posts-model.js`.
+
+    * Inside this file, we're going to import the db config since we're using the database calls. 
+
+    * Write new function to find by user id.
+    
+    * Extract the query into its this function. 
+
+    * Instead of the const post, let's just return db as a single post statement.
+
+    * Since we're passing params into the function, we need to replace the `req.params.id` with userId. The userId is what we'll pass as the param of findByUserId.
+
+        * Why isn't the findByUserId an async function? Because in this case, we don't have to actually wait on anything. There isn't some code that comes after the db call. 
+
+            * When we import it into a router, that's when we await that result.
+
+    ```
+    const db = require("../data/config")
+
+    function findByUserId(userId) {
+        return db("posts as p")
+            .leftJoin("users as u", "u.id", "p.user_id")
+            .where("user_id", userId)
+            .select("p.id", "p.contents", "u.username")
+    }
+    ```
+
+    * Export an object and include the function. We do this because we may have more model functions in the future we may also want to export. 
+    
+    ```
+    const db = require("../data/config")
+
+    function findByUserId(userId) {
+        return db("posts as p")
+            .leftJoin("users as u", "u.id", "p.user_id")
+            .where("user_id", userId)
+            .select("p.id", "p.contents", "u.username")
+    }
+
+    module.exports = {
+        findByUserId,
+    }
+    ```
+
+    * Import the model file into your post-router. 
+
+    * In the post router's try statement, create a variable that awaits the post model file to find by the user id. It will take in the params of the id. 
+
+    ```
+    try {
+        const posts = await postModel.findByUserId(req.params.id)
+        res.json(posts)
+    }
+    ```
+
+    * Now, if we ever wanted to run that query again in some other endpoint, we could just call the model function (`postModel.findByUserId(req.params.id)`). It will already be there. 
+
+    If you wanted to shorten the code a little more, just pass in the await call into json. 
+
+    ```
+    try {
+        res.json(await postModel.findByUserId(req.params.id))
+    }
+    ```
+
+    * Run in Insomnia again to make sure everything still works. It should. Double check with a few different user id's just to be sure. 
+
+    
+### Final Questions
+
+**_Q._** Is there a way to manually omit certain fields? **_A:_** There are ways in other DBMS's but not so sure about SQLite. This [question from Stack Overflow](https://stackoverflow.com/questions/729197/sql-exclude-a-column-using-select-except-columna-from-tablea) may be helpful here. What it might boil down to is you would create Views (kind of like storing your results more permanently in a permanent table). Views are when you want to save your result. [SQLite does support Views](https://www.tutorialspoint.com/sqlite/sqlite_views.htm).  
+    
+
+#### DONE!!!
