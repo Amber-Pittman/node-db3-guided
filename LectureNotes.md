@@ -326,17 +326,17 @@
         
         * This is because the default JOIN in SQL is called an "Inner Join." If keys don't match on both sides of the join - the join condition (ON ...) was not met - then it doesn't show anything. Nothing gets returned. That's the rule with Inner Join.
 
-        * There are [different types of joins](http://www.sql-join.com/sql-join-types). What it comes down to is: what side of the join is allowed to be empty or null?
+    * There are [different types of joins](http://www.sql-join.com/sql-join-types). What it comes down to is: what side of the join is allowed to be empty or null?
+        
+        * The default one is called **Inner Join** if we don't specify a specific type of join. Results only get returned if both sides have something. 
+
+        * **Left Join** - Returns all the rows in the first table even if the right table does not have any matching rows. 
+
+        * SQLite Does Not Fully Support these:
             
-            * The default one is called **Inner Join** if we don't specify a specific type of join. Results only get returned if both sides have something. 
+            * **Right Join** - Opposite of Left Join.
 
-            * **Left Join** - Returns all the rows in the first table even if the right table does not have any matching rows. 
-
-            * SQLite Does Not Fully Support these:
-                
-                * **Right Join** - Opposite of Left Join.
-
-                * **Full Join** - allows either side to be missing. 
+            * **Full Join** - allows either side to be missing. 
 
     * We can specify the type by prefixing JOIN with the type. Since the default join doesn't return any results, let's specify Left Join. When you run it, the Employee Name columns are empty but you do see the order details. 
     
@@ -349,3 +349,23 @@
     LEFT JOIN "Employee" AS e ON e."Id" = o."EmployeeId"
     WHERE o."Id" = 16608;
     ```
+
+### Code Along!
+
+```
+1:18:30
+```
+
+1. Get the Project started. This is a simple API with users and posts.
+
+    * Install npm. 
+    
+    * Start the project with `npm run server`
+
+    * Open Insomnia. Make a test request to `/users`. It should return a list of 3 users. 
+
+        ```
+        GET http://localhost:4000/users
+        ```
+
+    * Open the `blog.db3` database file. !!!!! 1:19:59 !!!!!!!
