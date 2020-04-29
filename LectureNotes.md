@@ -572,7 +572,7 @@ router.use("/:id/posts", postRouter)
     
 ### Final Questions
 
-**_Q.-** Is there a way to manually omit certain fields? **_A:_** There are ways in other DBMS's but not so sure about SQLite. This [question from Stack Overflow](https://stackoverflow.com/questions/729197/sql-exclude-a-column-using-select-except-columna-from-tablea) may be helpful here. What it might boil down to is you would create Views (kind of like storing your results more permanently in a permanent table). Views are when you want to save your result. [SQLite does support Views](https://www.tutorialspoint.com/sqlite/sqlite_views.htm).  
+**_Q._** Is there a way to manually omit certain fields? **_A:_** There are ways in other DBMS's but not so sure about SQLite. This [question from Stack Overflow](https://stackoverflow.com/questions/729197/sql-exclude-a-column-using-select-except-columna-from-tablea) may be helpful here. What it might boil down to is you would create Views (kind of like storing your results more permanently in a permanent table). Views are when you want to save your result. [SQLite does support Views](https://www.tutorialspoint.com/sqlite/sqlite_views.htm).  
     
 
 #### DONE!!!
