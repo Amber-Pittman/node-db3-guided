@@ -1,7 +1,12 @@
 const express = require("express")
+const postRouter = require("../posts/post-router")
 const db = require("../data/config")
 
-const router = express.Router()
+const router = express.Router({
+	mergeParams: true,
+})
+
+router.use("/:id/posts", postRouter)
 
 router.get("/", async (req, res, next) => {
 	try {

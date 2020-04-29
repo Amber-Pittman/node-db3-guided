@@ -420,7 +420,7 @@
 
         * When you define a parameter on a parent router (`users-router`), those values do not explictly get passed down to the children routers.
 
-        * To fix this, go into the parent router and give it an option to define it. You'll want to merge the params and set them to true. 
+        * To fix this, go into the parent router (`users-router`) and give it an option to define it. You'll want to merge the params and set them to true. 
 
         * You can read more about it on the [express.Router([options])](https://expressjs.com/en/api.html#express.router) section of Express Documentation.
         
