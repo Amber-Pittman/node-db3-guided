@@ -199,7 +199,8 @@
         * Let's also select the OrderDetail quantity and the Product Name. 
 
         ```
-        SELECT "OrderDetail"."Id", "OrderDetail"."Quantity", "Product"."ProductName" FROM "OrderDetail" 
+        SELECT "OrderDetail"."Id", "OrderDetail"."Quantity", "Product"."ProductName" 
+        FROM "OrderDetail" 
         JOIN "Product" ON "OrderDetail"."ProductId" = "Product"."Id"
         ```
 
@@ -218,4 +219,45 @@
 
     C. _Scenario:_ In a single query, find the employee's first name and last name associated with order #16608. 
 
-    * 
+    * If you look in the Orders table, you see 16k+ orders and it has an EmployeeId associated with an individual order. 
+
+    * Let's select the specific order we want (16608)
+
+    ```
+    SELECT * FROM "Order"
+    WHERE "Id" = 16608;
+    ```
+
+    * We need to see the employee's first and last names; we don't care that the EmployeeId is 9. Let's join in another table. 
+
+    * Since we're selecting from multiple tables, we need to specify order on the where statement. 
+
+    ```
+    SELECT * FROM "Order"
+    JOIN "Employee" ON "Employee"."Id" = "Order"."EmployeeId"
+    WHERE "Order"."Id" = 16608;
+    ```
+
+    * The code above gives us everything. But we don't want everything. Let's select the first name, last name, and the employee id. 
+
+    * Also, to prevent this table from getting super long, let's use aliases. 
+
+    ```
+    SELECT o."Id", e."FirstName", e."LastName" FROM "Order" AS o
+    JOIN "Employee" AS e ON e."Id" = o."EmployeeId"
+    WHERE o."Id" = 16608;
+    ```
+    
+    * You can also create aliases for the first name and last name as a way to specify between tables when columns have the same name. 
+
+    ```
+    SELECT o."Id", e."FirstName" "EmployeeFirstName", e."LastName" "EmployeeLastName" 
+    FROM "Order" AS o
+    JOIN "Employee" AS e ON e."Id" = o."EmployeeId"
+    WHERE o."Id" = 16608;
+    ```
+
+    * As you can see when you run it, the order was handled by `Anne Dodsworth`.
+
+    * Our SQL statements are getting a little bit more complicated. But so far so good. 
+    
