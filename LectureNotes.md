@@ -353,7 +353,7 @@
 ### Code Along!
 
 ```
-1:18:30
+Video at 1:18:30
 ```
 
 1. Get the Project started. This is a simple API with users and posts.
@@ -384,50 +384,118 @@
 
             * User Id - the foreign key
         
-    * Create an endpoint that lists out all posts for a user. You will need to create a new file (`posts-router.js`) to separate it from the users router. 
+2. Create an endpoint that lists out all posts for a user. You will need to create a new file (`posts-router.js`) to separate it from the users router. 
 
-    ```
-    const express = require(express)
-    const db = require("../data/config")
+```
+const express = require(express)
+const db = require("../data/config")
 
-    const router = express.Router()
+const router = express.Router()
+
+router.get("/", async (req, res, next) => {
+    try {
+        const posts = await db("posts").where("user_id", req.params.id)
+        res.json(posts)
+    } catch(err) {
+        next(err)
+    }
+})
+
+module.exports = router
+```
+
+3. Instead of importing posts router into the index file, import it into the users router. It'll be a sub-router of a sub-router. Don't forget to use it in the file and attach the postRouter. 
+
+```
+const express = require(express)
+const postRouter = require("../posts/post-router")
+const db = require("../data/config")
+
+const router = express.Router()
+
+router.use("/:id/posts", postRouter)
+```
+
+4. If you make your GET request now, you will get an error in the terminal. `ERROR: Undefined binding(s) detected when compiling SELECT`. Usually, this error just means that something you're passing into knex is undefined. In the `post-router` file, the where is probably undefined at `req.params.id`.
+
+    * When you define a parameter on a parent router (`users-router`), those values do not explictly get passed down to the children routers.
+
+    * To fix this, go into the parent router (`users-router`) and give it an option to define it. You'll want to merge the params and set them to true. 
+
+    * You can read more about it on the [express.Router([options])](https://expressjs.com/en/api.html#express.router) section of Express Documentation.
     
-    router.get("/", async (req, res, next) => {
-        try {
-            const posts = await db("posts").where("user_id", req.params.id)
-            res.json(posts)
-        } catch(err) {
-            next(err)
-        }
+    ```
+    const router = express.Router({
+        mergeParams: true,
     })
-
-    module.exports = router
     ```
 
-    * Instead of importing posts router into the index file, import it into the users router. It'll be a sub-router of a sub-router. Don't forget to use it in the file and attach the postRouter. 
+    * Try running the request again. You will now see a list of posts for a specific user. Success!
+
+5. Add a join statement to our query to get our user name in our post router. Doing so will be helpful when someone requests the user name from our API. 
+
+    * Put the Join before the where
+
+    * Use LEFT JOIN since we still want to see the post data even if there is not author id information.
+
+    * Join the table of "users" as the first param. 
+
+    * The second and the third params are just the sides of our condition. The users id is equal to the posts user_id.
 
     ```
-    const express = require(express)
-    const postRouter = require("../posts/post-router")
-    const db = require("../data/config")
-
-    const router = express.Router()
-
-    router.use("/:id/posts", postRouter)
+    try {
+            const posts = await db("posts")
+                .leftJoin("users", "users.id", "posts.user_id")
+                .where("user_id", req.params.id)
+            res.json(posts)
+        }
     ```
 
-    * If you make your GET request now, you will get an error in the terminal. `ERROR: Undefined binding(s) detected when compiling SELECT`. Usually, this error just means that something you're passing into knex is undefined. In the `post-router` file, the where is probably undefined at `req.params.id`.
+    * If you wanted to give it an alias, you could. They are completely optional. Just handy with long statements.
+    
+    ```
+    try {
+            const posts = await db("posts as p")
+                .leftJoin("users as u", "u.id", "p.user_id")
+                .where("user_id", req.params.id)
+            res.json(posts)
+        }
+    ```
 
-        * When you define a parameter on a parent router (`users-router`), those values do not explictly get passed down to the children routers.
+6. The req.params.id is going to select every column. But we don't want every column. We want specific columns. You can select them after the WHERE. 
 
-        * To fix this, go into the parent router (`users-router`) and give it an option to define it. You'll want to merge the params and set them to true. 
+    ```
+    try {
+            const posts = await db("posts as p")
+                .leftJoin("users as u", "u.id", "p.user_id")
+                .where("user_id", req.params.id)
+                .select("p.id", "p.contents", "u.username")
+            res.json(posts)
+        }
+    ```
 
-        * You can read more about it on the [express.Router([options])](https://expressjs.com/en/api.html#express.router) section of Express Documentation.
-        
-        ```
-        const router = express.Router({
-            mergeParams: true,
-        })
-        ```
+    * Under the hood this translates as
+    
+    ```
+    try {
+            const posts = await db("posts as p") 
+                                // FROM posts AS p
+                
+                .leftJoin("users as u", "u.id", "p.user_id")  
+                // LEFT JOIN users AS u ON u.id = p.user_id
+                
+                .where("user_id", req.params.id)
+                // WHERE user_id =?
 
-        * Try running the request again. You will now see a list of posts for a specific user. 
+                .select("p.id", "p.contents", "u.username")
+                // SELECT p.id, p.contents, u.username
+
+            res.json(posts)
+        }
+    ```
+
+    * If our statement looks out of order, it is. It's okay in JavaScript, as the order doesn't matter so much. BUT, in SQL you do want to keep them in the proper order. 
+
+    * Run a GET request to a users posts. `GET http://localhost:4000/users/3/posts` will return what it did before, except now we get the username with the Id and Contents. Just as we wanted. 
+
+7. 
