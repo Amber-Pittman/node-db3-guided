@@ -6,6 +6,7 @@
 
     A. Essentially, when you run these functions in SQL, it's much more efficient than JavaScript since we don't have to return as much data to our application.
 
+
     B. [Aggregate functions](https://www.sqlite.org/lang_aggfunc.html) are just helper functions we can call directly in the SQL statement. You can use them to 
         
     * count rows, 
@@ -39,6 +40,7 @@
     WHERE "ProductId" = 11;
     ```
 
+
     D. _Scenario:_ We want to see the quantity of every single product... not just Product 11. 
     
     * Leave out the Where. We're selecting _everything._
@@ -57,6 +59,7 @@
     SELECT "ProductId", SUM("Quantity") AS "TotalQuantity" FROM "OrderDetail"
     GROUP BY "ProductId";
     ```
+
 
     E. _Scenario:_ In a single query, you want to figure out how many products are in each category. Hint: You'll use the `COUNT` [aggregate function](https://www.sqlite.org/lang_aggfunc.html). 
 
@@ -80,6 +83,7 @@
     SELECT "CategoryId", COUNT(*) AS "TotalProducts" FROM "Product"
     GROUP BY "CategoryId";
     ```
+
 
 2. Defining and using Relationships Between Tables with SQLite, a relational database. 
 
@@ -148,6 +152,7 @@
 
                 * This is how rows can be related to other rows - by having foreign keys point to each other. 
 
+
 3. How to Query Multiple Tables at the Same Time
 
     We want SQL to read through the foreign key to get the values from the other tables during the query. 
@@ -161,7 +166,8 @@
     ```
     SELECT * FROM "OrderDetail" LIMIT 1;
     ```
-    
+
+
     B. _Scenario:_ Let's say we want to get the product details. In the results, we can't tell what that product is. It's only showing an id. 
 
     * Luckily, with SQL, it comes with these things called joins. Join is a SQL command that we can use to query multiple tables in one statement. They combine results into one singular result. 
@@ -217,6 +223,7 @@
         JOIN "Product" AS p ON o."ProductId" = p."Id" 
         ```
 
+
     C. _Scenario:_ In a single query, find the employee's first name and last name associated with order #16608. 
 
     * If you look in the Orders table, you see 16k+ orders and it has an EmployeeId associated with an individual order. 
@@ -257,7 +264,88 @@
     WHERE o."Id" = 16608;
     ```
 
+    * If the code above gets too long, you can shorten it however you like, as long as there is a semi-colon on the very end. 
+
+    ```
+    SELECT 
+        o."Id", 
+        e."FirstName" "EmployeeFirstName", 
+        e."LastName" "EmployeeLastName" 
+    FROM "Order" AS o
+    JOIN "Employee" AS e ON e."Id" = o."EmployeeId"
+    WHERE o."Id" = 16608;
+    ```
+
     * As you can see when you run it, the order was handled by `Anne Dodsworth`.
 
     * Our SQL statements are getting a little bit more complicated. But so far so good. 
+
+
+    D. _Scenario:_ Let's say we wanted to add yet another table to the result. We can actually have multiple Joins in a single query. We're not limited in joining just 1 additional table. 
+
+    * If you look in the Browse Data of the Order table, you will see that Order also has customers. Let's pull in the customer name too. 
+
+    * Right after the first join, let's put in another one and join the Customer table. Make the alias of Customer as "c." If you submit it as is, nothing happens because you're not selecting anything else. 
+
+    * Select the ContactName column and provide a customer alias. Now that you've added that, you will see the order Id, EmployeeFirstName, EmployeeLastName, and CustomerName. 
+
+    ```
+    SELECT 
+        o."Id", 
+        e."FirstName" "EmployeeFirstName", 
+        e."LastName" "EmployeeLastName",
+        c."ContactName" "CustomerName"
+    FROM "Order" AS o
+    JOIN "Employee" AS e ON e."Id" = o."EmployeeId"
+    JOIN "Customer" AS c on c."Id" = o."CustomerId"
+    WHERE o."Id" = 16608;
+    ```
+
+    * Can you query results returned by another query in the context of using joins to create a temporary table? You can use the results of another query in a new query. However, that is beyond the scope of what's being taught. 
+
+
+    E. Let's revert the code back to just a single join. Let's say that Ann no longer works for the company. The company goes in and deletes her name from the database in the Employees table. 
+
+    * What's going to happen to all the rows that reference that employee? What happens to the OrderDetail rows? Will those orders get deleted along with her? Probably not; they shouldn't.
+
+    * If you run your SQL statement again, you'll get an empty result. Not even the order data gets returned. 
+
+    ```
+    SELECT 
+        o."Id", 
+        e."FirstName" "EmployeeFirstName", 
+        e."LastName" "EmployeeLastName"
+    FROM "Order" AS o
+    JOIN "Employee" AS e ON e."Id" = o."EmployeeId"
+    WHERE o."Id" = 16608;
+    ```
+
+    * The order still exists, it's just not in our database. But the employee no longer exists, as expected. 
+
+    * Since there's not a matching row on both sides of the join so nothing gets returned.
+        
+        * This is because the default JOIN in SQL is called an "Inner Join." If keys don't match on both sides of the join - the join condition (ON ...) was not met - then it doesn't show anything. Nothing gets returned. That's the rule with Inner Join.
+
+        * There are [different types of joins](http://www.sql-join.com/sql-join-types). What it comes down to is: what side of the join is allowed to be empty or null?
+            
+            * The default one is called **Inner Join** if we don't specify a specific type of join. Results only get returned if both sides have something. 
+
+            * **Left Join** - Returns all the rows in the first table even if the right table does not have any matching rows. 
+
+            * SQLite Does Not Fully Support these:
+                
+                * **Right Join** - Opposite of Left Join.
+
+                * **Full Join** - allows either side to be missing. 
+
+    * We can specify the type by prefixing JOIN with the type. Since the default join doesn't return any results, let's specify Left Join. When you run it, the Employee Name columns are empty but you do see the order details. 
     
+    ```
+    SELECT 
+        o."Id", 
+        e."FirstName" "EmployeeFirstName", 
+        e."LastName" "EmployeeLastName"
+    FROM "Order" AS o
+    LEFT JOIN "Employee" AS e ON e."Id" = o."EmployeeId"
+    WHERE o."Id" = 16608;
+    ```
